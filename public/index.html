@@ -431,6 +431,14 @@ button { font-family: 'Inter', system-ui, sans-serif; }
   margin-bottom: 8px;
 }
 
+.sel-go {
+  margin-top: 10px; width: 100%; padding: 12px; border-radius: 10px; border: none;
+  background: linear-gradient(135deg, var(--or), var(--or2)); color: white;
+  font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Inter', system-ui, sans-serif;
+  box-shadow: 0 4px 20px var(--go); transition: all 0.2s;
+}
+.sel-go:hover { transform: translateY(-2px); box-shadow: 0 8px 28px var(--go); }
+
 .stags { display: flex; flex-wrap: wrap; gap: 5px; }
 
 .stag {
@@ -448,23 +456,6 @@ button { font-family: 'Inter', system-ui, sans-serif; }
 .stag .x { cursor: pointer; font-size: 13px; opacity: 0.7; }
 .stag .x:hover { opacity: 1; }
 
-.find-btn {
-  width: 100%;
-  padding: 14px;
-  border-radius: 14px;
-  border: none;
-  background: linear-gradient(135deg, var(--or), var(--or2));
-  color: white;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 20px var(--go);
-  margin-bottom: 20px;
-}
-
-.find-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 28px var(--go); }
-.find-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; box-shadow: none; }
 
 /* =========== LOADING / EMPTY =========== */
 .empty { text-align: center; padding: 48px 20px; color: var(--mt); font-size: 14px; }
@@ -577,7 +568,7 @@ body.no-scroll { overflow: hidden; }
   .chip { padding: 9px 16px; font-size: 12px; }
 
   /* Find button */
-  .find-btn { padding: 16px; font-size: 15px; }
+  .sel-go { padding: 14px; font-size: 15px; }
 
   /* Nav */
   .nav { height: 50px; padding: 0 14px; }
@@ -653,9 +644,8 @@ body.no-scroll { overflow: hidden; }
       <div class="kicker">Ingredients</div>
       <div class="sec-title">What's in your kitchen?</div>
       <div class="sec-sub">Tap what you have and we'll find recipes that use those ingredients. Pick "None" for random ideas.</div>
-      <div class="sel-bar" id="selB"><div class="lb">Your ingredients</div><div class="stags" id="selT"></div></div>
+      <div class="sel-bar" id="selB"><div class="lb">Your ingredients</div><div class="stags" id="selT"></div><button class="sel-go" id="kitB" onclick="kitGo()">Go</button></div>
       <div id="ingP"></div>
-      <button class="find-btn" id="kitB" onclick="kitGo()" disabled>Find Meals</button>
       <div id="kitO"></div>
     </div>
   </div>
@@ -1259,13 +1249,12 @@ let kitAllResults=[],kitShown=0,kitGrid=null;
 
 function renderIng(){
   document.getElementById('ingP').innerHTML=
-    '<div class="ing-sec"><div class="chips"><div class="chip non" onclick="selNone(this)">None — surprise me!</div></div></div>'+
     ING.map(c=>'<div class="ing-sec"><div class="ing-label">'+c.n+'</div><div class="chips">'+c.i.map(x=>'<div class="chip" data-i="'+x.toLowerCase()+'" onclick="togI(this,\''+x.toLowerCase()+'\')">'+x+'</div>').join('')+'</div></div>').join('');
 }
-function togI(el,i){document.querySelector('.chip.non')?.classList.remove('sel');if(selI.has(i)){selI.delete(i);el.classList.remove('sel');}else{selI.add(i);el.classList.add('sel');}updSel();document.getElementById('kitB').disabled=false;document.getElementById('kitB').textContent=selI.size?'Find Meals':'Show Random Meals';}
-function selNone(el){selI.clear();document.querySelectorAll('.chip.sel').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');updSel();document.getElementById('kitB').disabled=false;document.getElementById('kitB').textContent='Show Random Meals';}
-function rmI(i){selI.delete(i);document.querySelectorAll('.chip[data-i="'+i+'"]').forEach(c=>c.classList.remove('sel'));updSel();document.getElementById('kitB').disabled=selI.size===0&&!document.querySelector('.chip.non.sel');}
-function updSel(){const b=document.getElementById('selB'),t=document.getElementById('selT');if(!selI.size){b.classList.remove('vis');return;}b.classList.add('vis');t.innerHTML=[...selI].map(x=>'<span class="stag">'+x+'<span class="x" onclick="rmI(\''+x+'\')">&times;</span></span>').join('');}
+function togI(el,i){document.querySelector('.chip.non')?.classList.remove('sel');if(selI.has(i)){selI.delete(i);el.classList.remove('sel');}else{selI.add(i);el.classList.add('sel');}updSel();}
+function selNone(el){selI.clear();document.querySelectorAll('.chip.sel').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');updSel();kitGo();}
+function rmI(i){selI.delete(i);document.querySelectorAll('.chip[data-i="'+i+'"]').forEach(c=>c.classList.remove('sel'));updSel();}
+function updSel(){const b=document.getElementById('selB'),t=document.getElementById('selT');if(!selI.size){b.classList.remove('vis');return;}b.classList.add('vis');t.innerHTML=[...selI].map(x=>'<span class="stag">'+x+'<span class="x" onclick="rmI(\''+x+'\')">&times;</span></span>').join('');document.getElementById('kitB').textContent='Find '+selI.size+' ingredient'+(selI.size>1?'s':'');}
 
 async function kitGo(){
   const o=document.getElementById('kitO');
