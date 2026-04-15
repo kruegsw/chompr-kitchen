@@ -298,29 +298,6 @@ button { font-family: 'Inter', system-ui, sans-serif; }
 
 .card:hover .img img { transform: scale(1.06); }
 
-.card .img .save-btn {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  padding: 5px 12px;
-  border-radius: 100px;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(6px);
-  border: none;
-  font-size: 11px;
-  font-weight: 600;
-  color: white;
-  cursor: pointer;
-  opacity: 0;
-  transform: translateY(-4px);
-  transition: all 0.25s;
-  z-index: 2;
-  font-family: 'Inter', system-ui, sans-serif;
-}
-
-.card:hover .img .save-btn { opacity: 1; transform: translateY(0); }
-.card .img .save-btn:hover { background: rgba(192,132,252,0.6); }
-.card .img .save-btn.on { opacity: 1; transform: translateY(0); background: rgba(52,211,153,0.5); }
 
 .card .body { padding: 16px 18px 18px; }
 
@@ -530,8 +507,6 @@ button { font-family: 'Inter', system-ui, sans-serif; }
   color: var(--tx); transition: all 0.2s;
 }
 .dacts button:hover { border-color: rgba(192,132,252,0.3); background: var(--cd2); }
-.dacts .dsv { background: linear-gradient(135deg, var(--or), var(--or2)); color: white; border: none; }
-.dacts .dsv.on { background: linear-gradient(135deg, var(--gn), #10b981); }
 
 .det-close {
   position: sticky; top: 10px; float: right; margin: 10px 10px 0 0; z-index: 10;
@@ -552,8 +527,6 @@ body.no-scroll { overflow: hidden; }
   .search-input { font-size: 16px; padding: 14px 16px; }
   .page { padding: 20px 14px 96px; }
 
-  /* Save button always visible on mobile (no hover) */
-  .card .img .save-btn { opacity: 1; transform: translateY(0); padding: 7px 14px; font-size: 12px; }
 
   /* Larger card image on mobile for better visuals */
   .card .img { height: 200px; }
@@ -605,7 +578,6 @@ body.no-scroll { overflow: hidden; }
 @media (hover: none) {
   .card:hover { transform: none; box-shadow: none; border-color: var(--bd); }
   .card:hover .img img { transform: none; }
-  .card .img .save-btn { opacity: 1; transform: translateY(0); }
 }
 </style>
 </head>
@@ -815,13 +787,11 @@ function cardDiff(m){
   return diff(ic,sc);
 }
 function cardHtml(m,ex){
-  const sv=saved.some(s=>s.aid===m.idMeal);
   const rt=ratings['a_'+m.idMeal];
   const df=cardDiff(m);
   return`<div class="card" data-id="${m.idMeal}">
     <div class="img">
       <img src="${m.strMealThumb||''}" alt="${esc(m.strMeal)}" loading="lazy">
-      <button class="save-btn${sv?' on':''}" data-sv="${m.idMeal}">${sv?'&#10003; Saved':'+ Save'}</button>
     </div>
     <div class="body">${ex||''}<span class="tag tag-or">${esc(m.strCategory||'Recipe')}</span>${m.strArea?'<span class="tag tag-ac">'+esc(m.strArea)+'</span>':''}<span class="tag ${df.c}">${df.l}</span>
       <div class="title">${esc(m.strMeal)}</div>
@@ -841,8 +811,6 @@ function appendCards(grid,meals,exFn){
 
 function wireGrid(grid){
   grid.addEventListener('click',function(e){
-    const s=e.target.closest('[data-sv]');
-    if(s){e.stopPropagation();const id=s.dataset.sv;const m=_mc[id];if(m)qSave(id,m.strMeal,m.strMealThumb||'',m.strCategory||'',s);return;}
     const c=e.target.closest('.card[data-id]');if(c)viewA(c.dataset.id);
   });
 }
@@ -860,18 +828,19 @@ function onNearBottom(el,cb){
   el.appendChild(sentinel);
   const obs=new IntersectionObserver((entries)=>{
     if(entries[0].isIntersecting)cb();
-  },{rootMargin:'400px'});
+  },{rootMargin:'800px'});
   obs.observe(sentinel);
   return{sentinel,obs};
 }
 
 // ============ HOME — ENDLESS SCROLL ============
 let homeGrid=null,homeLoading=false,homeIds=new Set();
+let _prefetched=[];
 
 async function loadHome(){
   const o=document.getElementById('hOut');
   o.innerHTML='<div class="spin">Loading recipes...</div>';
-  homeIds.clear();
+  homeIds.clear();_prefetched=[];
   // Fetch random + easy recipes in parallel, then shuffle together
   const [meals]=await Promise.all([fetchRandom(8),fetchEasyBatch()]);
   const easy=getEasyMeals(4);
@@ -883,6 +852,7 @@ async function loadHome(){
   wireGrid(homeGrid);
   addHomeMeals(mixed);
   onNearBottom(o,loadMoreHome);
+  prefetchNext();
 }
 
 function addHomeMeals(meals){
@@ -890,13 +860,28 @@ function addHomeMeals(meals){
   appendCards(homeGrid,fresh);
 }
 
+function prefetchNext(){
+  fetchRandom(8).then(meals=>{
+    const easy=getEasyMeals(4);
+    _prefetched=[...meals,...easy].sort(()=>Math.random()-0.5);
+  });
+}
+
 async function loadMoreHome(){
   if(homeLoading)return;homeLoading=true;
-  const meals=await fetchRandom(6);
-  const easy=getEasyMeals(2);
+  if(_prefetched.length){
+    addHomeMeals(_prefetched);
+    _prefetched=[];
+    homeLoading=false;
+    prefetchNext();
+    return;
+  }
+  const meals=await fetchRandom(8);
+  const easy=getEasyMeals(4);
   const mixed=[...meals,...easy].sort(()=>Math.random()-0.5);
   if(mixed.length)addHomeMeals(mixed);
   homeLoading=false;
+  prefetchNext();
 }
 
 async function fetchRandom(n){
@@ -1307,7 +1292,6 @@ function showMoreKit(){
 function renderDet(r){
   // Update URL for shareability + SEO
   if(r.aid)history.pushState(null,r.name,'/recipe/'+r.aid+'/'+recipeSlug(r.name));
-  const sv=saved.some(s=>s.aid===r.aid);
   const rt=ratings[r.id]||0;
   const df=diff(r.ings.length,r.steps.length);
   const p=document.getElementById('detP');
@@ -1330,7 +1314,6 @@ function renderDet(r){
         <div class="sttx">${rt?STAR_L[rt]+' ('+rt+'/5)':'Tap a star to rate'}</div>
       </div>
       <div class="dacts">
-        ${r.aid?'<button class="dsv'+(sv?' on':'')+'" id="dsvB" data-aid="'+r.aid+'">'+(sv?'&#10003; Saved':'+ Save')+'</button>':''}
         <a href="${esc(r.src)}" target="_blank" rel="noopener"><button>Source</button></a>
         ${r.yt?'<a href="'+esc(r.yt)+'" target="_blank" rel="noopener"><button>&#9654; Video</button></a>':''}
         <button onclick="shareRecipe('${r.aid}','${esc(r.name).replace(/'/g,"\\'")}')">Share</button>
@@ -1347,12 +1330,6 @@ function renderDet(r){
       p.querySelector('.sttx').textContent=cur?STAR_L[cur]+' ('+cur+'/5)':'Tap a star to rate';
     };
   });
-  const svB=p.querySelector('#dsvB');
-  if(svB){svB.onclick=()=>{
-    const aid=svB.dataset.aid;const i=saved.findIndex(s=>s.aid===aid);
-    if(i>=0){saved.splice(i,1);svB.classList.remove('on');svB.innerHTML='+ Save';syncUnsave(aid);}
-    else{const m=_mc[aid];const rec={aid,name:m?m.strMeal:r.name,image:m?m.strMealThumb:r.img,category:m?m.strCategory:r.cat};saved.push(rec);svB.classList.add('on');svB.innerHTML='&#10003; Saved';syncSave(rec);}
-  };}
 }
 function closeDet(){document.getElementById('detO').classList.remove('act');document.body.classList.remove('no-scroll');history.pushState(null,'','/');}
 async function shareRecipe(aid,name){
