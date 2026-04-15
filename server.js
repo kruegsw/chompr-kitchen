@@ -48,6 +48,12 @@ app.get('/sitemap.xml', async (req, res) => {
     urls += `  <url><loc>${SITE}/category/${encodeURIComponent(c)}</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
   });
 
+  // Add cuisine pages
+  const cuisines = ['American','British','Canadian','Chinese','Croatian','Dutch','Egyptian','Filipino','French','Greek','Indian','Irish','Italian','Jamaican','Japanese','Kenyan','Malaysian','Mexican','Moroccan','Norwegian','Polish','Portuguese','Russian','Spanish','Thai','Turkish','Vietnamese'];
+  cuisines.forEach(c => {
+    urls += `  <url><loc>${SITE}/cuisine/${encodeURIComponent(c)}</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
+  });
+
   // Fetch some popular recipes for the sitemap
   try {
     const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
@@ -151,12 +157,82 @@ app.get('/recipe/:id/:slug?', async (req, res) => {
   res.send(html);
 });
 
-// ─── Tab routes (serve SPA for /browse, /kitchen) ──
+// ─── Helper: inject meta into SPA shell ───────────
+function spaWithMeta(title, desc, canonical, ogImage) {
+  let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+  const inject = `
+<title>${title}</title>
+<meta name="description" content="${desc.replace(/"/g, '&quot;')}">
+<link rel="canonical" href="${canonical}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="${canonical}">
+<meta property="og:title" content="${title}">
+<meta property="og:description" content="${desc.replace(/"/g, '&quot;')}">
+<meta property="og:image" content="${ogImage || SITE + '/og-image.png'}">
+<meta property="og:site_name" content="Chompr">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${title}">
+<meta name="twitter:description" content="${desc.replace(/"/g, '&quot;')}">
+<meta name="twitter:image" content="${ogImage || SITE + '/og-image.png'}">`;
+  html = html.replace(/<title>.*?<\/title>/, '');
+  html = html.replace(/<meta name="description"[^>]*>/, '');
+  html = html.replace(/<link rel="canonical"[^>]*>/, '');
+  html = html.replace(/<meta property="og:[^>]*>/g, '');
+  html = html.replace(/<meta name="twitter:[^>]*>/g, '');
+  html = html.replace('</head>', inject + '\n</head>');
+  return html;
+}
+
+// ─── Tab routes ───────────────────────────────────
 app.get('/browse', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  const html = spaWithMeta(
+    'Browse Recipes by Category — Chompr',
+    'Explore recipes by category: entrees, seafood, pasta, breakfast, desserts, vegetarian, vegan and more.',
+    SITE + '/browse'
+  );
+  res.send(html);
 });
+
 app.get('/kitchen', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  const html = spaWithMeta(
+    'Find Recipes by Ingredient — Chompr',
+    'Select the ingredients you have and find recipes that use them. No more wasting food — cook with what you\'ve got.',
+    SITE + '/kitchen'
+  );
+  res.send(html);
+});
+
+// ─── Category pages ───────────────────────────────
+app.get('/category/:name', async (req, res) => {
+  const name = req.params.name;
+  const html = spaWithMeta(
+    name + ' Recipes — Chompr',
+    'Browse ' + name + ' recipes. Find the best ' + name.toLowerCase() + ' dishes to cook at home.',
+    SITE + '/category/' + encodeURIComponent(name)
+  );
+  res.send(html.replace('</body>', `<script>window._openCategory="${name.replace(/"/g, '')}";</script>\n</body>`));
+});
+
+// ─── Cuisine pages ────────────────────────────────
+app.get('/cuisine/:name', async (req, res) => {
+  const name = req.params.name;
+  const html = spaWithMeta(
+    name + ' Recipes — Chompr',
+    'Explore ' + name + ' cuisine. Discover authentic ' + name.toLowerCase() + ' recipes to cook at home.',
+    SITE + '/cuisine/' + encodeURIComponent(name)
+  );
+  res.send(html.replace('</body>', `<script>window._openCuisine="${name.replace(/"/g, '')}";</script>\n</body>`));
+});
+
+// ─── Search pages (shareable search results) ──────
+app.get('/search/:query', (req, res) => {
+  const q = decodeURIComponent(req.params.query);
+  const html = spaWithMeta(
+    'Recipes for "' + q + '" — Chompr',
+    'Search results for "' + q + '". Find recipes matching ' + q + ' on Chompr.',
+    SITE + '/search/' + encodeURIComponent(q)
+  );
+  res.send(html.replace('</body>', `<script>window._openSearch="${q.replace(/"/g, '&quot;')}";</script>\n</body>`));
 });
 
 // ─── Static files (after route handlers) ──────────

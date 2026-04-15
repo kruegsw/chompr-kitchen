@@ -961,6 +961,7 @@ function expandWord(w){
 async function doSearch(){
   const q=document.getElementById('hQ').value.trim();if(!q)return;
   _lastQuery=q;updateNavQuery();
+  history.pushState(null,'','/search/'+encodeURIComponent(q));
   const o=document.getElementById('hOut');
   o.innerHTML='<div class="spin">Searching for "'+esc(q)+'"…</div>';
   homeIds.clear();
@@ -1365,6 +1366,28 @@ if(_initTab&&_initTab!=='home')go(_initTab,true);
 
 // If server injected a recipe ID (direct link / SEO), open it after load
 if(window._openRecipeId){setTimeout(()=>viewA(window._openRecipeId),500);}
+
+// If server injected a category, open browse and load that category
+if(window._openCategory){setTimeout(()=>{
+  go('cats',true);
+  // Find the matching CAT_GROUPS entry and trigger browse
+  const cat=window._openCategory;
+  const grp=CAT_GROUPS.find(g=>g.cats.includes(cat));
+  if(grp)browseC(grp.cats,grp.label);
+  else browseC([cat],cat);
+},600);}
+
+// If server injected a cuisine, search for it
+if(window._openCuisine){setTimeout(()=>{
+  document.getElementById('hQ').value=window._openCuisine;
+  doSearch();
+},600);}
+
+// If server injected a search query, run it
+if(window._openSearch){setTimeout(()=>{
+  document.getElementById('hQ').value=window._openSearch;
+  doSearch();
+},600);}
 </script>
 </body>
 </html>
