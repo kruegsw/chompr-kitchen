@@ -716,10 +716,13 @@ async function initApp(){
   }catch(e){}
   loadHome();loadCats();renderIng();
 }
-function go(s){
+const TAB_PATHS={home:'/',cats:'/browse',kit:'/kitchen'};
+const PATH_TABS={'/':'home','/browse':'cats','/kitchen':'kit'};
+function go(s,noPush){
   document.querySelectorAll('.scr').forEach(x=>x.classList.remove('on'));
   document.getElementById('s-'+s).classList.add('on');
   document.querySelectorAll('.bn').forEach(n=>n.classList.toggle('on',n.dataset.s===s));
+  if(!noPush)history.pushState({tab:s},'',TAB_PATHS[s]||'/');
 }
 
 // Nav search — show search icon when scrolled past the main search bar
@@ -1377,11 +1380,20 @@ document.getElementById('detO').addEventListener('click',e=>{if(e.target===e.cur
 
 // Handle browser back button
 window.addEventListener('popstate',()=>{
-  if(document.getElementById('detO').classList.contains('act'))closeDet();
+  if(document.getElementById('detO').classList.contains('act')){
+    document.getElementById('detO').classList.remove('act');document.body.classList.remove('no-scroll');
+    return;
+  }
+  const tab=PATH_TABS[location.pathname];
+  if(tab)go(tab,true);
 });
 
 // Auto-start on the discover page
 initApp();
+
+// Open correct tab based on URL
+const _initTab=PATH_TABS[location.pathname];
+if(_initTab&&_initTab!=='home')go(_initTab,true);
 
 // If server injected a recipe ID (direct link / SEO), open it after load
 if(window._openRecipeId){setTimeout(()=>viewA(window._openRecipeId),500);}

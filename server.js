@@ -39,6 +39,8 @@ Sitemap: ${SITE}/sitemap.xml`
 // ─── SEO: sitemap.xml ─────────────────────────────
 app.get('/sitemap.xml', async (req, res) => {
   let urls = `  <url><loc>${SITE}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>\n`;
+  urls += `  <url><loc>${SITE}/browse</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>\n`;
+  urls += `  <url><loc>${SITE}/kitchen</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>\n`;
 
   // Add category pages
   const cats = ['Beef','Chicken','Lamb','Pork','Goat','Seafood','Pasta','Side','Starter','Breakfast','Dessert','Vegetarian','Vegan','Miscellaneous'];
@@ -147,6 +149,14 @@ app.get('/recipe/:id/:slug?', async (req, res) => {
   html = html.replace('</body>', `<script>window._openRecipeId="${id}";</script>\n</body>`);
 
   res.send(html);
+});
+
+// ─── Tab routes (serve SPA for /browse, /kitchen) ──
+app.get('/browse', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+app.get('/kitchen', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ─── Static files (after route handlers) ──────────
