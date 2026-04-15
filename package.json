@@ -1,7 +1,7 @@
 {
-  "name": "smart-cookbook",
+  "name": "chompr-kitchen",
   "version": "1.0.0",
-  "description": "Smart Cookbook server",
+  "description": "Chompr.kitchen recipe server",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

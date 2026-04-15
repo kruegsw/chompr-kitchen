@@ -79,7 +79,7 @@ app.post('/api/rate', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('  ================================');
-  console.log('  SMART COOKBOOK - Server');
+  console.log('  CHOMPR.KITCHEN - Server');
   console.log('  ================================');
   console.log('');
   console.log(`  Local:    http://localhost:${PORT}`);

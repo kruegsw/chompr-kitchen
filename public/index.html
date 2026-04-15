@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Cookbook</title>
+<title>Chompr — Recipes for Everyone</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -37,6 +37,8 @@ body {
   line-height: 1.5;
   overflow-x: hidden;
 }
+
+
 
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
@@ -75,6 +77,41 @@ button { font-family: 'Inter', system-ui, sans-serif; }
 .nav-brand:hover { opacity: 0.8; }
 .nav-brand .b-accent { color: var(--or); }
 
+.nav-attr { font-size: 9px; color: var(--mt); white-space: nowrap; }
+.nav-attr a { color: var(--mt); text-decoration: underline; }
+
+.nav-query {
+  display: none; cursor: pointer; font-size: 11px; color: var(--mt);
+  background: var(--cd); border: 1px solid var(--bd); border-radius: 8px;
+  padding: 5px 10px; max-width: 180px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; transition: color 0.2s;
+}
+.nav-query:hover { color: var(--tx2); border-color: rgba(192,132,252,0.25); }
+
+.nav-search { background: none; border: none; color: var(--mt); font-size: 1.2rem; cursor: pointer; padding: 6px 8px; transition: color 0.2s; display: none; }
+.nav-search:hover { color: var(--tx); }
+
+.search-overlay {
+  display: none; position: fixed; top: 8px; right: 16px; z-index: 100;
+  background: var(--sf); border: 1px solid var(--bd); border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  padding: 8px 10px; gap: 8px; align-items: center; width: 400px; max-width: calc(100vw - 32px);
+}
+.search-overlay.act { display: flex; }
+.search-overlay input {
+  flex: 1; background: var(--cd); border: 1px solid var(--bd); border-radius: 12px;
+  padding: 12px 16px; color: var(--tx); font-size: 15px; font-family: 'Inter', system-ui, sans-serif; outline: none;
+}
+.search-overlay input:focus { border-color: rgba(192,132,252,0.4); }
+.search-overlay input::placeholder { color: var(--mt2); }
+.search-overlay .so-go {
+  background: linear-gradient(135deg, var(--or), var(--or2)); border: none; border-radius: 10px;
+  color: white; font-size: 13px; font-weight: 700; padding: 10px 18px; cursor: pointer;
+  font-family: 'Inter', system-ui, sans-serif; white-space: nowrap;
+}
+.search-overlay .so-close { background: none; border: none; color: var(--mt); font-size: 1.4rem; cursor: pointer; padding: 6px; }
+.nav-attr a:hover { color: var(--tx2); }
+
 .bnav {
   position: fixed;
   bottom: 0;
@@ -109,9 +146,6 @@ button { font-family: 'Inter', system-ui, sans-serif; }
 .bn .bi { font-size: 1.2rem; }
 .bn.on { color: var(--or); }
 .bn:hover { color: var(--tx2); }
-
-.attr { text-align: center; font-size: 10px; color: var(--mt2); padding: 12px 20px 72px; }
-.attr a { color: var(--mt); text-decoration: underline; }
 
 .page { padding: 28px 20px 96px; max-width: 960px; margin: 0 auto; }
 .scr { display: none; }
@@ -472,14 +506,79 @@ button { font-family: 'Inter', system-ui, sans-serif; }
 .dacts .dsv { background: linear-gradient(135deg, var(--or), var(--or2)); color: white; border: none; }
 .dacts .dsv.on { background: linear-gradient(135deg, var(--gn), #10b981); }
 
+.det-close {
+  position: sticky; top: 10px; float: right; margin: 10px 10px 0 0; z-index: 10;
+  width: 36px; height: 36px; border-radius: 50%; border: none;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(6px); color: white;
+  font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.det-close:hover { background: rgba(0,0,0,0.8); }
+
+body.no-scroll { overflow: hidden; }
+
 /* =========== RESPONSIVE =========== */
 @media (max-width: 600px) {
   .grid { grid-template-columns: 1fr; }
   .cat-grid { grid-template-columns: repeat(2, 1fr); }
   .search-wrap { flex-direction: column; }
-  .search-btn { width: 100%; }
-  .page { padding: 20px 16px 96px; }
-  .dimg { height: 200px; }
+  .search-btn { width: 100%; padding: 14px; font-size: 14px; }
+  .search-input { font-size: 16px; padding: 14px 16px; }
+  .page { padding: 20px 14px 96px; }
+
+  /* Save button always visible on mobile (no hover) */
+  .card .img .save-btn { opacity: 1; transform: translateY(0); padding: 7px 14px; font-size: 12px; }
+
+  /* Larger card image on mobile for better visuals */
+  .card .img { height: 200px; }
+  .card .body { padding: 14px 16px 16px; }
+  .card .title { font-size: 15px; }
+
+  /* Active tap feedback instead of hover */
+  .card:active { transform: scale(0.98); }
+  .card:hover { transform: none; box-shadow: none; border-color: var(--bd); }
+
+  /* Detail view */
+  .dto { padding: 0; }
+  .dp { border-radius: 0; margin: 0; max-width: 100%; min-height: 100vh; }
+  .dimg { height: 220px; }
+  .dcon { padding: 20px 18px 28px; }
+  .dcon h2 { font-size: 1.35rem; }
+  .dcon ul li, .dcon ol li { font-size: 14px; line-height: 1.65; }
+  .dacts { gap: 6px; }
+  .dacts button, .dacts a button { padding: 13px 12px; font-size: 13px; }
+
+  /* Larger touch targets for chips */
+  .chip { padding: 9px 16px; font-size: 12px; }
+
+  /* Find button */
+  .find-btn { padding: 16px; font-size: 15px; }
+
+  /* Nav */
+  .nav { height: 50px; padding: 0 14px; }
+  .nav-brand { font-size: 0.95rem; }
+  .nav-attr { font-size: 8px; }
+  .nav-query { font-size: 10px; max-width: 140px; padding: 4px 8px; }
+  .search-overlay { top: 0; right: 0; width: 100%; max-width: 100%; border-radius: 0; border: none; border-bottom: 1px solid var(--bd); padding: 10px 14px; }
+
+  /* Bottom nav larger tap targets */
+  .bnav { padding: 10px 0 max(14px, env(safe-area-inset-bottom)); }
+  .bn { padding: 6px 16px; }
+  .bn .bi { font-size: 1.3rem; }
+
+  /* Star rating larger for touch */
+  .stb { font-size: 1.9rem; padding: 4px; }
+}
+
+/* Prevent iOS zoom on input focus */
+@media (max-width: 600px) {
+  input, select, textarea { font-size: 16px !important; }
+}
+
+/* Touch device: disable hover effects globally */
+@media (hover: none) {
+  .card:hover { transform: none; box-shadow: none; border-color: var(--bd); }
+  .card:hover .img img { transform: none; }
+  .card .img .save-btn { opacity: 1; transform: translateY(0); }
 }
 </style>
 </head>
@@ -488,13 +587,21 @@ button { font-family: 'Inter', system-ui, sans-serif; }
 <!-- ===== APP ===== -->
 <div id="app">
   <div class="nav">
-    <div class="nav-brand" onclick="go('home')"><span class="b-accent">Smart</span> Cookbook</div>
+    <div class="nav-brand" onclick="go('home')">Chompr<span class="b-accent">.kitchen</span></div>
+    <div class="nav-attr">Powered by <a href="https://www.themealdb.com" target="_blank" rel="noopener">TheMealDB</a></div>
+    <div class="nav-query" id="navQuery" onclick="openNavSearch()"></div>
+    <button class="nav-search" id="navSrch" onclick="openNavSearch()">&#128269;</button>
+  </div>
+
+  <div class="search-overlay" id="srchOv">
+    <input type="text" id="navQ" placeholder="Search any recipe..." onkeydown="if(event.key==='Enter'){doNavSearch();closeNavSearch();}">
+    <button class="so-go" onclick="doNavSearch();closeNavSearch();">Go</button>
+    <button class="so-close" onclick="closeNavSearch()">&#10005;</button>
   </div>
 
   <div class="page">
     <!-- HOME -->
     <div class="scr on" id="s-home">
-      <div class="sec-title" style="margin-bottom:20px;">Smart Cookbook</div>
       <div class="search-wrap">
         <input class="search-input" type="text" id="hQ" placeholder="Search any recipe..." onkeydown="if(event.key==='Enter')doSearch()">
         <button class="search-btn" onclick="doSearch()">Search</button>
@@ -522,8 +629,6 @@ button { font-family: 'Inter', system-ui, sans-serif; }
       <div id="kitO"></div>
     </div>
   </div>
-
-  <div class="attr">Recipe data powered by <a href="https://www.themealdb.com" target="_blank" rel="noopener">TheMealDB</a> &amp; <a href="https://www.thecocktaildb.com" target="_blank" rel="noopener">TheCocktailDB</a></div>
 
   <div class="bnav">
     <button class="bn on" data-s="home" onclick="go('home')"><span class="bi">&#127968;</span><span>Home</span></button>
@@ -585,6 +690,46 @@ function go(s){
   document.querySelectorAll('.scr').forEach(x=>x.classList.remove('on'));
   document.getElementById('s-'+s).classList.add('on');
   document.querySelectorAll('.bn').forEach(n=>n.classList.toggle('on',n.dataset.s===s));
+}
+
+// Nav search — show search icon when scrolled past the main search bar
+let _navSrchVisible=false,_lastQuery='';
+function updateNavQuery(){
+  const el=document.getElementById('navQuery');
+  if(_lastQuery&&_navSrchVisible){
+    el.textContent=_lastQuery;
+    el.style.display='block';
+  }else{
+    el.style.display='none';
+  }
+}
+window.addEventListener('scroll',()=>{
+  const mainSearch=document.querySelector('.search-wrap');
+  if(!mainSearch)return;
+  const below=mainSearch.getBoundingClientRect().bottom<0;
+  if(below!==_navSrchVisible){
+    _navSrchVisible=below;
+    document.getElementById('navSrch').style.display=below?'block':'none';
+    document.querySelector('.nav-attr').style.display=below?'none':'';
+    updateNavQuery();
+  }
+},{passive:true});
+
+function openNavSearch(){
+  document.getElementById('srchOv').classList.add('act');
+  const inp=document.getElementById('navQ');
+  inp.value=document.getElementById('hQ').value;
+  inp.focus();
+}
+function closeNavSearch(){
+  document.getElementById('srchOv').classList.remove('act');
+}
+function doNavSearch(){
+  const q=document.getElementById('navQ').value.trim();
+  if(!q)return;
+  document.getElementById('hQ').value=q;
+  go('home');
+  doSearch();
 }
 
 // API
@@ -731,21 +876,146 @@ function getEasyMeals(n){
   return out;
 }
 
+// Area/category aliases for smart search
+const AREA_ALIAS={italian:'Italian',mexican:'Mexican',chinese:'Chinese',japanese:'Japanese',indian:'Indian',french:'French',thai:'Thai',spanish:'Spanish',greek:'Greek',american:'American',british:'British',canadian:'Canadian',jamaican:'Jamaican',irish:'Irish',russian:'Russian',polish:'Polish',moroccan:'Moroccan',turkish:'Turkish',korean:'Korean',vietnamese:'Vietnamese',egyptian:'Egyptian',kenyan:'Kenyan',malaysian:'Malaysian',dutch:'Dutch',filipino:'Filipino',croatian:'Croatian',norwegian:'Norwegian',portuguese:'Portuguese'};
+const CAT_ALIAS={dessert:'Dessert',desserts:'Dessert',breakfast:'Breakfast',seafood:'Seafood',pasta:'Pasta',vegetarian:'Vegetarian',vegan:'Vegan',starter:'Starter',starters:'Starter',appetizer:'Starter',appetizers:'Starter',side:'Side',sides:'Side',beef:'Beef',chicken:'Chicken',lamb:'Lamb',pork:'Pork',goat:'Goat',miscellaneous:'Miscellaneous'};
+
+// ---- Fuzzy / typo-tolerant helpers ----
+// Simple plural stemming
+function stem(w){
+  w=w.toLowerCase();
+  if(w.endsWith('ies')&&w.length>4)return w.slice(0,-3)+'y';
+  if(w.endsWith('ves')&&w.length>4)return w.slice(0,-3)+'f';
+  if(w.endsWith('oes')&&w.length>4)return w.slice(0,-2);
+  if(w.endsWith('ses')||w.endsWith('ches')||w.endsWith('shes')||w.endsWith('xes')||w.endsWith('zes'))return w.slice(0,-2);
+  if(w.endsWith('s')&&!w.endsWith('ss')&&w.length>3)return w.slice(0,-1);
+  return w;
+}
+
+// Levenshtein distance
+function ldist(a,b){
+  const m=a.length,n=b.length;
+  const d=Array.from({length:m+1},(_,i)=>i);
+  for(let j=1;j<=n;j++){
+    let prev=d[0];d[0]=j;
+    for(let i=1;i<=m;i++){
+      const tmp=d[i];
+      d[i]=a[i-1]===b[j-1]?prev:1+Math.min(prev,d[i],d[i-1]);
+      prev=tmp;
+    }
+  }
+  return d[m];
+}
+
+// Known food terms dictionary for fuzzy matching
+const FOOD_DICT=['chicken','beef','pork','lamb','goat','turkey','duck','fish','salmon','tuna','shrimp','prawn','crab','lobster','squid','egg','bacon','sausage','ham','steak','mince','meatball','pasta','rice','noodle','bread','tortilla','oat','flour','quinoa','couscous','cheese','milk','butter','cream','yogurt','potato','tomato','onion','garlic','pepper','carrot','broccoli','spinach','mushroom','corn','lettuce','pea','bean','celery','cucumber','avocado','cabbage','cauliflower','zucchini','eggplant','lemon','lime','banana','strawberry','mango','apple','orange','coconut','blueberry','raspberry','cherry','grape','pineapple','peach','pear','sugar','salt','vinegar','honey','oil','sauce','soup','salad','cake','pie','cookie','brownie','pancake','waffle','omelette','sandwich','burger','taco','curry','stew','roast','grill','fry','bake','chili','chocolate','vanilla','cinnamon','ginger','basil','oregano','thyme','parsley','cumin','paprika','turmeric','rosemary','mint','dill','nutmeg','saffron'];
+
+// Find closest dictionary match for a word (returns original if no close match)
+function fuzzy(w){
+  w=w.toLowerCase();
+  if(FOOD_DICT.includes(w))return w;
+  const stemmed=stem(w);
+  if(FOOD_DICT.includes(stemmed))return stemmed;
+  let best=null,bestD=Infinity;
+  for(const t of FOOD_DICT){
+    const d=ldist(stemmed,t);
+    if(d<bestD){bestD=d;best=t;}
+  }
+  // Only accept fuzzy match if distance is reasonable (max 2 for short words, 3 for longer)
+  const maxD=stemmed.length<=4?1:stemmed.length<=6?2:3;
+  return bestD<=maxD?best:w;
+}
+
+// Expand a search word into variants: original, stemmed, fuzzy-corrected
+function expandWord(w){
+  const s=new Set();
+  s.add(w.toLowerCase());
+  s.add(stem(w));
+  s.add(fuzzy(w));
+  return[...s];
+}
+
 async function doSearch(){
   const q=document.getElementById('hQ').value.trim();if(!q)return;
+  _lastQuery=q;updateNavQuery();
   const o=document.getElementById('hOut');
   o.innerHTML='<div class="spin">Searching for "'+esc(q)+'"…</div>';
   homeIds.clear();
-  // Search by name
+  const seen=new Set();
+  const all=[];
+  function addMeals(meals){if(!meals)return;meals.forEach(m=>{if(!seen.has(m.idMeal)){seen.add(m.idMeal);all.push(m);}});}
+
+  // Build expanded search terms: original words + stemmed + fuzzy-corrected
+  const rawWords=q.toLowerCase().split(/\s+/).filter(w=>w.length>2);
+  const expanded=new Set();
+  rawWords.forEach(w=>expandWord(w).forEach(v=>expanded.add(v)));
+  const words=[...expanded];
+
+  // Show "did you mean" hint if fuzzy corrected anything
+  const corrections=[];
+  rawWords.forEach(w=>{const f=fuzzy(w);if(f!==w.toLowerCase()&&f!==stem(w))corrections.push([w,f]);});
+
+  // 1) Exact name search
   const d=await af(API+'/search.php?s='+encodeURIComponent(q));
-  if(!d||!d.meals){o.innerHTML='<div class="empty"><div class="ei">&#129300;</div>No results for "'+esc(q)+'"</div>';return;}
-  o.innerHTML='<div style="font-size:12px;color:var(--mt);margin-bottom:14px;">Results for "'+esc(q)+'"</div>';
+  if(d&&d.meals)addMeals(d.meals);
+
+  // 2) Search each expanded word by name
+  const nameSearches=[...new Set(words)];
+  if(nameSearches.length){
+    const ws=await Promise.all(nameSearches.map(w=>af(API+'/search.php?s='+encodeURIComponent(w))));
+    ws.forEach(r=>{if(r&&r.meals)addMeals(r.meals);});
+  }
+
+  // 3) Search each expanded word as an ingredient
+  const ingResults=await Promise.all(words.map(w=>af(API+'/filter.php?i='+encodeURIComponent(w))));
+  const ingIds=[];
+  ingResults.forEach(r=>{if(r&&r.meals)r.meals.forEach(m=>{if(!seen.has(m.idMeal))ingIds.push(m.idMeal);});});
+  if(ingIds.length){
+    const batch=ingIds.slice(0,12);
+    const lookups=await Promise.all(batch.map(id=>af(API+'/lookup.php?i='+id)));
+    lookups.forEach(r=>{if(r&&r.meals)addMeals(r.meals);});
+  }
+
+  // 4) Check if any word matches an area (cuisine) or category
+  for(const w of words){
+    const area=AREA_ALIAS[w];
+    if(area){const r=await af(API+'/filter.php?a='+encodeURIComponent(area));if(r&&r.meals){const batch=r.meals.slice(0,12);const lookups=await Promise.all(batch.map(m=>af(API+'/lookup.php?i='+m.idMeal)));lookups.forEach(r=>{if(r&&r.meals)addMeals(r.meals);});}}
+    const cat=CAT_ALIAS[w];
+    if(cat){const r=await af(API+'/filter.php?c='+encodeURIComponent(cat));if(r&&r.meals){const batch=r.meals.slice(0,12);const lookups=await Promise.all(batch.map(m=>af(API+'/lookup.php?i='+m.idMeal)));lookups.forEach(r=>{if(r&&r.meals)addMeals(r.meals);});}}
+  }
+
+  // 5) If still nothing, try first-letter search and filter client-side
+  if(!all.length&&q.length>=2){
+    const r=await af(API+'/search.php?f='+encodeURIComponent(q[0]));
+    if(r&&r.meals){
+      const matches=r.meals.filter(m=>{const ml=m.strMeal.toLowerCase();return words.some(w=>ml.includes(w));});
+      addMeals(matches);
+    }
+  }
+
+  if(!all.length){o.innerHTML='<div class="empty"><div class="ei">&#129300;</div>No results for "'+esc(q)+'"</div>';return;}
+
+  // Score results: meals matching more search words rank higher
+  const ql=q.toLowerCase();
+  all.sort((a,b)=>{
+    const an=a.strMeal.toLowerCase(),bn=b.strMeal.toLowerCase();
+    const aExact=an.includes(ql)?2:0,bExact=bn.includes(ql)?2:0;
+    const aWords=words.filter(w=>an.includes(w)).length,bWords=words.filter(w=>bn.includes(w)).length;
+    return(bExact+bWords)-(aExact+aWords);
+  });
+
+  // Build header showing what we actually searched for
+  const searchedTerms=words.filter(w=>!rawWords.includes(w));
+  let hdr='<div style="font-size:12px;color:var(--mt);margin-bottom:14px;">Results for "'+esc(q)+'"';
+  if(searchedTerms.length)hdr+=' <span style="color:var(--or);">(also searched: '+searchedTerms.map(w=>'"'+esc(w)+'"').join(', ')+')</span>';
+  hdr+='</div>';
+
+  o.innerHTML=hdr;
   homeGrid=document.createElement('div');homeGrid.className='grid';
   o.appendChild(homeGrid);
   wireGrid(homeGrid);
-  d.meals.forEach(m=>homeIds.add(m.idMeal));
-  appendCards(homeGrid,d.meals);
-  // Endless: after search results, keep loading random
+  all.forEach(m=>homeIds.add(m.idMeal));
+  appendCards(homeGrid,all);
   onNearBottom(o,loadMoreHome);
 }
 
@@ -917,7 +1187,7 @@ async function viewA(aid){
   if(cached&&cached._isDrink){
     const p=document.getElementById('detP');
     p.innerHTML='<div class="spin" style="padding:48px;">Loading drink...</div>';
-    document.getElementById('detO').classList.add('act');
+    document.getElementById('detO').classList.add('act');document.body.classList.add('no-scroll');
     const d=await af(DRINK_API+'/lookup.php?i='+aid);
     if(!d||!d.drinks){p.innerHTML='<div class="dcon"><p style="color:var(--mt)">Could not load.</p><button onclick="closeDet()" style="margin-top:12px;padding:10px 20px;border-radius:10px;background:var(--cd);color:var(--tx);border:1px solid var(--bd);cursor:pointer">Close</button></div>';return;}
     const dk=d.drinks[0];
@@ -929,7 +1199,7 @@ async function viewA(aid){
   // Normal meal
   const p=document.getElementById('detP');
   p.innerHTML='<div class="spin" style="padding:48px;">Loading recipe...</div>';
-  document.getElementById('detO').classList.add('act');
+  document.getElementById('detO').classList.add('act');document.body.classList.add('no-scroll');
   const dd=await af(API+'/lookup.php?i='+aid);
   if(!dd||!dd.meals){p.innerHTML='<div class="dcon"><p style="color:var(--mt)">Could not load.</p><button onclick="closeDet()" style="margin-top:12px;padding:10px 20px;border-radius:10px;background:var(--cd);color:var(--tx);border:1px solid var(--bd);cursor:pointer">Close</button></div>';return;}
   renderDet(parseMeal(dd.meals[0]));
@@ -1013,6 +1283,7 @@ function renderDet(r){
   const df=diff(r.ings.length,r.steps.length);
   const p=document.getElementById('detP');
   p.innerHTML=`
+    <button class="det-close" onclick="closeDet()">&#10005;</button>
     <div class="dimg">${r.img?'<img src="'+esc(r.img)+'" alt="'+esc(r.name)+'">':'<div style="height:100%;display:flex;align-items:center;justify-content:center;font-size:3.5rem;color:var(--mt)">&#127860;</div>'}</div>
     <div class="dcon">
       <span class="tag tag-or">${esc(r.cat||'Recipe')}</span>
@@ -1053,7 +1324,7 @@ function renderDet(r){
     else{const m=_mc[aid];const rec={aid,name:m?m.strMeal:r.name,image:m?m.strMealThumb:r.img,category:m?m.strCategory:r.cat};saved.push(rec);svB.classList.add('on');svB.innerHTML='&#10003; Saved';syncSave(rec);}
   };}
 }
-function closeDet(){document.getElementById('detO').classList.remove('act');}
+function closeDet(){document.getElementById('detO').classList.remove('act');document.body.classList.remove('no-scroll');}
 function stH(n){let s='';for(let i=0;i<5;i++)s+=i<n?'&#11088;':'<span style="filter:grayscale(1) opacity(.3)">&#11088;</span>';return s;}
 
 // Helpers
