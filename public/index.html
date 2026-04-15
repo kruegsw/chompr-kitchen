@@ -631,7 +631,7 @@ body.no-scroll { overflow: hidden; }
     <div class="scr on" id="s-home">
       <div class="hero">
         <div class="hero-title">What's in your fridge?</div>
-        <div class="hero-sub">Search by recipe name, ingredient, or cuisine — or head to <a href="#" onclick="go('kit');return false;">Kitchen</a> to pick what you have.</div>
+        <div class="hero-sub">Search by recipe name, ingredient, or cuisine — or head to <a href="#" onclick="go('kit');return false;">Ingredients</a> to pick what you have.</div>
       </div>
       <div class="search-wrap">
         <div class="search-box">
@@ -666,7 +666,7 @@ body.no-scroll { overflow: hidden; }
   <div class="bnav">
     <button class="bn on" data-s="home" onclick="go('home')"><span class="bi">&#127968;</span><span>Home</span></button>
     <button class="bn" data-s="cats" onclick="go('cats')"><span class="bi">&#128194;</span><span>Browse</span></button>
-    <button class="bn" data-s="kit" onclick="go('kit')"><span class="bi">&#129476;</span><span>Kitchen</span></button>
+    <button class="bn" data-s="kit" onclick="go('kit')"><span class="bi">&#129476;</span><span>Ingredients</span></button>
   </div>
 </div>
 
@@ -719,8 +719,8 @@ async function initApp(){
   }catch(e){}
   loadHome();loadCats();renderIng();
 }
-const TAB_PATHS={home:'/',cats:'/browse',kit:'/kitchen'};
-const PATH_TABS={'/':'home','/browse':'cats','/kitchen':'kit'};
+const TAB_PATHS={home:'/',cats:'/browse',kit:'/ingredients'};
+const PATH_TABS={'/':'home','/browse':'cats','/ingredients':'kit'};
 function go(s,noPush){
   document.querySelectorAll('.scr').forEach(x=>x.classList.remove('on'));
   document.getElementById('s-'+s).classList.add('on');

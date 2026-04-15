@@ -40,7 +40,7 @@ Sitemap: ${SITE}/sitemap.xml`
 app.get('/sitemap.xml', async (req, res) => {
   let urls = `  <url><loc>${SITE}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>\n`;
   urls += `  <url><loc>${SITE}/browse</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>\n`;
-  urls += `  <url><loc>${SITE}/kitchen</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>\n`;
+  urls += `  <url><loc>${SITE}/ingredients</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>\n`;
 
   // Add category pages
   const cats = ['Beef','Chicken','Lamb','Pork','Goat','Seafood','Pasta','Side','Starter','Breakfast','Dessert','Vegetarian','Vegan','Miscellaneous'];
@@ -193,11 +193,14 @@ app.get('/browse', (req, res) => {
   res.send(html);
 });
 
-app.get('/kitchen', (req, res) => {
+// Redirect old URL
+app.get('/kitchen', (req, res) => res.redirect(301, '/ingredients'));
+
+app.get('/ingredients', (req, res) => {
   const html = spaWithMeta(
     'Find Recipes by Ingredient — Chompr',
     'Select the ingredients you have and find recipes that use them. No more wasting food — cook with what you\'ve got.',
-    SITE + '/kitchen'
+    SITE + '/ingredients'
   );
   res.send(html);
 });
