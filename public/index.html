@@ -212,9 +212,11 @@ button { font-family: 'Inter', system-ui, sans-serif; }
   margin-bottom: 28px;
 }
 
+.search-box { flex: 1; position: relative; }
+
 .search-input {
-  flex: 1;
-  padding: 14px 20px;
+  width: 100%;
+  padding: 14px 38px 14px 20px;
   background: var(--sf);
   border: 1px solid var(--bd);
   border-radius: 14px;
@@ -224,6 +226,14 @@ button { font-family: 'Inter', system-ui, sans-serif; }
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
+
+.search-clear {
+  display: none; position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--mt); font-size: 14px; cursor: pointer;
+  padding: 4px 6px; border-radius: 50%; transition: color 0.2s;
+}
+.search-clear:hover { color: var(--tx); }
+.search-clear.vis { display: block; }
 
 .search-input:focus {
   border-color: rgba(192,132,252,0.35);
@@ -624,7 +634,10 @@ body.no-scroll { overflow: hidden; }
         <div class="hero-sub">Search by recipe name, ingredient, or cuisine — or head to <a href="#" onclick="go('kit');return false;">Kitchen</a> to pick what you have.</div>
       </div>
       <div class="search-wrap">
-        <input class="search-input" type="text" id="hQ" placeholder="Search any recipe..." onkeydown="if(event.key==='Enter')doSearch()">
+        <div class="search-box">
+          <input class="search-input" type="text" id="hQ" placeholder="Search any recipe..." onkeydown="if(event.key==='Enter')doSearch()" oninput="updClear()">
+          <button class="search-clear" id="hQX" onclick="clearSearch()">&#10005;</button>
+        </div>
         <button class="search-btn" onclick="doSearch()">Search</button>
       </div>
       <div id="hOut"></div>
@@ -738,6 +751,18 @@ window.addEventListener('scroll',()=>{
   }
 },{passive:true});
 
+function updClear(){
+  document.getElementById('hQX').classList.toggle('vis',document.getElementById('hQ').value.length>0);
+}
+function clearSearch(){
+  document.getElementById('hQ').value='';
+  document.getElementById('hQX').classList.remove('vis');
+  _lastQuery='';updateNavQuery();
+  document.getElementById('hQ').focus();
+  // Reload home feed
+  history.pushState(null,'','/');
+  loadHome();
+}
 function openNavSearch(){
   document.getElementById('srchOv').classList.add('act');
   const inp=document.getElementById('navQ');
@@ -960,7 +985,7 @@ function expandWord(w){
 
 async function doSearch(){
   const q=document.getElementById('hQ').value.trim();if(!q)return;
-  _lastQuery=q;updateNavQuery();
+  _lastQuery=q;updateNavQuery();updClear();
   history.pushState(null,'','/search/'+encodeURIComponent(q));
   const o=document.getElementById('hOut');
   o.innerHTML='<div class="spin">Searching for "'+esc(q)+'"…</div>';
