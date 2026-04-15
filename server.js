@@ -6,9 +6,10 @@ const os = require('os');
 const app = express();
 const PORT = 3002;
 const DATA_FILE = path.join(__dirname, 'data.json');
+const MEAL_API = 'https://www.themealdb.com/api/json/v1/1';
+const SITE = 'https://chompr.kitchen';
 
 app.use(express.json({ limit: '5mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── Data helpers ───────────────────────────────────
 function loadData() {
@@ -25,6 +26,131 @@ function loadData() {
 function saveData(data) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8');
 }
+
+// ─── SEO: robots.txt ──────────────────────────────
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain').send(
+`User-agent: *
+Allow: /
+Sitemap: ${SITE}/sitemap.xml`
+  );
+});
+
+// ─── SEO: sitemap.xml ─────────────────────────────
+app.get('/sitemap.xml', async (req, res) => {
+  let urls = `  <url><loc>${SITE}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>\n`;
+
+  // Add category pages
+  const cats = ['Beef','Chicken','Lamb','Pork','Goat','Seafood','Pasta','Side','Starter','Breakfast','Dessert','Vegetarian','Vegan','Miscellaneous'];
+  cats.forEach(c => {
+    urls += `  <url><loc>${SITE}/category/${encodeURIComponent(c)}</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>\n`;
+  });
+
+  // Fetch some popular recipes for the sitemap
+  try {
+    const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+    const picks = letters.sort(() => Math.random() - 0.5).slice(0, 5);
+    const results = await Promise.all(picks.map(l => fetch(`${MEAL_API}/search.php?f=${l}`).then(r => r.json()).catch(() => null)));
+    const seen = new Set();
+    results.forEach(r => {
+      if (r && r.meals) r.meals.forEach(m => {
+        if (!seen.has(m.idMeal)) {
+          seen.add(m.idMeal);
+          const slug = m.strMeal.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/,'');
+          urls += `  <url><loc>${SITE}/recipe/${m.idMeal}/${slug}</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>\n`;
+        }
+      });
+    });
+  } catch (e) { /* sitemap still works without recipe URLs */ }
+
+  res.type('application/xml').send(
+`<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urls}</urlset>`
+  );
+});
+
+// ─── SEO: Recipe pages with server-side meta for crawlers ───
+app.get('/recipe/:id/:slug?', async (req, res) => {
+  const id = req.params.id;
+  let meal = null;
+
+  try {
+    const r = await fetch(`${MEAL_API}/lookup.php?i=${id}`);
+    const d = await r.json();
+    if (d && d.meals) meal = d.meals[0];
+  } catch (e) { /* fall through to default */ }
+
+  if (!meal) {
+    // Redirect to home if recipe not found
+    return res.redirect('/');
+  }
+
+  // Build ingredients list for schema
+  const ings = [];
+  for (let i = 1; i <= 20; i++) {
+    const g = meal['strIngredient' + i], ms = meal['strMeasure' + i];
+    if (g && g.trim()) ings.push(((ms || '').trim() + ' ' + g.trim()).trim());
+  }
+
+  const name = meal.strMeal || 'Recipe';
+  const desc = `How to make ${name}. ${ings.length} ingredients. ${meal.strCategory || ''} ${meal.strArea || ''} recipe.`.trim();
+  const img = meal.strMealThumb || '';
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+$/, '');
+  const canonical = `${SITE}/recipe/${id}/${slug}`;
+
+  // Schema.org Recipe structured data
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'Recipe',
+    name: name,
+    image: img,
+    description: desc,
+    recipeCategory: meal.strCategory || '',
+    recipeCuisine: meal.strArea || '',
+    recipeIngredient: ings,
+    recipeInstructions: (meal.strInstructions || '').split(/\r?\n/).filter(s => s.trim().length > 10).map(s => ({
+      '@type': 'HowToStep',
+      text: s.trim()
+    })),
+    url: canonical
+  };
+
+  // Read the SPA index.html and inject meta tags + schema before </head>
+  let html = fs.readFileSync(path.join(__dirname, 'public', 'index.html'), 'utf8');
+
+  const inject = `
+<title>${name} — Chompr</title>
+<meta name="description" content="${desc.replace(/"/g, '&quot;')}">
+<link rel="canonical" href="${canonical}">
+<meta property="og:type" content="article">
+<meta property="og:url" content="${canonical}">
+<meta property="og:title" content="${name} — Chompr">
+<meta property="og:description" content="${desc.replace(/"/g, '&quot;')}">
+<meta property="og:image" content="${img}">
+<meta property="og:site_name" content="Chompr">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${name} — Chompr">
+<meta name="twitter:description" content="${desc.replace(/"/g, '&quot;')}">
+<meta name="twitter:image" content="${img}">
+<script type="application/ld+json">${JSON.stringify(schema)}</script>`;
+
+  // Replace the default meta tags with recipe-specific ones
+  html = html.replace(/<title>.*?<\/title>/, '');
+  html = html.replace(/<meta name="description"[^>]*>/, '');
+  html = html.replace(/<link rel="canonical"[^>]*>/, '');
+  html = html.replace(/<meta property="og:[^>]*>/g, '');
+  html = html.replace(/<meta name="twitter:[^>]*>/g, '');
+  html = html.replace('</head>', inject + '\n</head>');
+
+  // Inject a script that auto-opens this recipe on load
+  html = html.replace('</body>', `<script>window._openRecipeId="${id}";</script>\n</body>`);
+
+  res.send(html);
+});
+
+// ─── Static files (after route handlers) ──────────
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ─── API: Get all data ─────────────────────────────
 app.get('/api/data', (req, res) => {
@@ -93,9 +219,6 @@ app.listen(PORT, '0.0.0.0', () => {
     }
   }
 
-  console.log('');
-  console.log('  Share the Network link with');
-  console.log('  anyone on your Wi-Fi!');
   console.log('');
   console.log('  Press Ctrl+C to stop the server.');
   console.log('');

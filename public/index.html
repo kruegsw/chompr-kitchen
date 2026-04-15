@@ -4,6 +4,25 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chompr — Recipes for Everyone</title>
+<meta name="description" content="Type what's in your fridge, get recipes instantly. Browse thousands of meals by ingredient, cuisine, or category. Free recipe search at Chompr.kitchen.">
+<meta name="keywords" content="recipes, cooking, meals, ingredients, recipe search, what to cook, meal ideas, dinner ideas, chompr">
+<link rel="canonical" href="https://chompr.kitchen/">
+
+<!-- Open Graph / Social -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://chompr.kitchen/">
+<meta property="og:title" content="Chompr — Type what's in your fridge, get recipes instantly">
+<meta property="og:description" content="Search thousands of recipes by ingredient, cuisine, or name. Free, fast, and mobile-friendly.">
+<meta property="og:image" content="https://chompr.kitchen/og-image.png">
+<meta property="og:site_name" content="Chompr">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Chompr — Recipes for Everyone">
+<meta name="twitter:description" content="Type what's in your fridge, get recipes instantly.">
+<meta name="twitter:image" content="https://chompr.kitchen/og-image.png">
+
+<meta name="theme-color" content="#0a0614">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -1278,6 +1297,8 @@ function showMoreKit(){
 }
 
 function renderDet(r){
+  // Update URL for shareability + SEO
+  if(r.aid)history.pushState(null,r.name,'/recipe/'+r.aid+'/'+recipeSlug(r.name));
   const sv=saved.some(s=>s.aid===r.aid);
   const rt=ratings[r.id]||0;
   const df=diff(r.ings.length,r.steps.length);
@@ -1324,15 +1345,24 @@ function renderDet(r){
     else{const m=_mc[aid];const rec={aid,name:m?m.strMeal:r.name,image:m?m.strMealThumb:r.img,category:m?m.strCategory:r.cat};saved.push(rec);svB.classList.add('on');svB.innerHTML='&#10003; Saved';syncSave(rec);}
   };}
 }
-function closeDet(){document.getElementById('detO').classList.remove('act');document.body.classList.remove('no-scroll');}
+function closeDet(){document.getElementById('detO').classList.remove('act');document.body.classList.remove('no-scroll');history.pushState(null,'','/');}
+function recipeSlug(name){return(name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-+$/,'');}
 function stH(n){let s='';for(let i=0;i<5;i++)s+=i<n?'&#11088;':'<span style="filter:grayscale(1) opacity(.3)">&#11088;</span>';return s;}
 
 // Helpers
 function esc(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 document.getElementById('detO').addEventListener('click',e=>{if(e.target===e.currentTarget)closeDet();});
 
+// Handle browser back button
+window.addEventListener('popstate',()=>{
+  if(document.getElementById('detO').classList.contains('act'))closeDet();
+});
+
 // Auto-start on the discover page
 initApp();
+
+// If server injected a recipe ID (direct link / SEO), open it after load
+if(window._openRecipeId){setTimeout(()=>viewA(window._openRecipeId),500);}
 </script>
 </body>
 </html>
