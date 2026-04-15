@@ -23,6 +23,7 @@
 <meta name="twitter:image" content="https://chompr.kitchen/og-image.png">
 
 <meta name="theme-color" content="#0a0614">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230a0614'/><text x='16' y='23' font-family='Georgia,serif' font-size='22' font-weight='bold' fill='%23fb923c' text-anchor='middle'>C</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -197,6 +198,12 @@ button { font-family: 'Inter', system-ui, sans-serif; }
   max-width: 500px;
   margin-bottom: 24px;
 }
+
+/* =========== HERO =========== */
+.hero { margin-bottom: 20px; }
+.hero-title { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 800; color: var(--tx); margin-bottom: 6px; }
+.hero-sub { font-size: 13px; color: var(--mt); line-height: 1.5; }
+.hero-sub a { color: var(--or); text-decoration: underline; }
 
 /* =========== SEARCH =========== */
 .search-wrap {
@@ -621,6 +628,10 @@ body.no-scroll { overflow: hidden; }
   <div class="page">
     <!-- HOME -->
     <div class="scr on" id="s-home">
+      <div class="hero">
+        <div class="hero-title">What's in your fridge?</div>
+        <div class="hero-sub">Search by recipe name, ingredient, or cuisine — or head to <a href="#" onclick="go('kit');return false;">Kitchen</a> to pick what you have.</div>
+      </div>
       <div class="search-wrap">
         <input class="search-input" type="text" id="hQ" placeholder="Search any recipe..." onkeydown="if(event.key==='Enter')doSearch()">
         <button class="search-btn" onclick="doSearch()">Search</button>
@@ -1325,6 +1336,7 @@ function renderDet(r){
         ${r.aid?'<button class="dsv'+(sv?' on':'')+'" id="dsvB" data-aid="'+r.aid+'">'+(sv?'&#10003; Saved':'+ Save')+'</button>':''}
         <a href="${esc(r.src)}" target="_blank" rel="noopener"><button>Source</button></a>
         ${r.yt?'<a href="'+esc(r.yt)+'" target="_blank" rel="noopener"><button>&#9654; Video</button></a>':''}
+        <button onclick="shareRecipe('${r.aid}','${esc(r.name).replace(/'/g,"\\'")}')">Share</button>
         <button onclick="closeDet()">Close</button>
       </div>
     </div>`;
@@ -1346,6 +1358,16 @@ function renderDet(r){
   };}
 }
 function closeDet(){document.getElementById('detO').classList.remove('act');document.body.classList.remove('no-scroll');history.pushState(null,'','/');}
+async function shareRecipe(aid,name){
+  const url=location.origin+'/recipe/'+aid+'/'+recipeSlug(name);
+  if(navigator.share){
+    try{await navigator.share({title:name+' — Chompr',url:url});return;}catch(e){}
+  }
+  try{await navigator.clipboard.writeText(url);
+    const b=document.querySelector('.dacts button[onclick^="share"]');
+    if(b){const orig=b.textContent;b.textContent='Link copied!';setTimeout(()=>b.textContent=orig,2000);}
+  }catch(e){}
+}
 function recipeSlug(name){return(name||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-+$/,'');}
 function stH(n){let s='';for(let i=0;i<5;i++)s+=i<n?'&#11088;':'<span style="filter:grayscale(1) opacity(.3)">&#11088;</span>';return s;}
 
