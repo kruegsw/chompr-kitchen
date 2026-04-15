@@ -1257,32 +1257,11 @@ function rmI(i){selI.delete(i);document.querySelectorAll('.chip[data-i="'+i+'"]'
 function updSel(){const b=document.getElementById('selB'),t=document.getElementById('selT');if(!selI.size){b.classList.remove('vis');return;}b.classList.add('vis');t.innerHTML=[...selI].map(x=>'<span class="stag">'+x+'<span class="x" onclick="rmI(\''+x+'\')">&times;</span></span>').join('');document.getElementById('kitB').textContent='Find '+selI.size+' ingredient'+(selI.size>1?'s':'');}
 
 async function kitGo(){
-  const o=document.getElementById('kitO');
-  if(document.querySelector('.chip.non.sel')||!selI.size){
-    // Random endless
-    o.innerHTML='';
-    kitGrid=document.createElement('div');kitGrid.className='grid';
-    o.appendChild(kitGrid);
-    wireGrid(kitGrid);
-    const meals=await fetchRandom(8);
-    if(!meals.length){o.innerHTML='<div class="empty"><div class="ei">&#128268;</div>No connection.</div>';return;}
-    appendCards(kitGrid,meals);
-    onNearBottom(o,async()=>{const m=await fetchRandom(6);if(m.length)appendCards(kitGrid,m);});
-    return;
-  }
-  o.innerHTML='<div class="spin">Searching by ingredients...</div>';
-  const ings=[...selI];
-  const all=await Promise.all(ings.map(x=>af(API+'/filter.php?i='+encodeURIComponent(x))));
-  const mm={};all.forEach((d,idx)=>{if(!d||!d.meals)return;d.meals.forEach(m=>{if(!mm[m.idMeal])mm[m.idMeal]={meal:m,cnt:0,mt:[]};mm[m.idMeal].cnt++;mm[m.idMeal].mt.push(ings[idx]);});});
-  const sorted=Object.values(mm).sort((a,b)=>b.cnt-a.cnt);
-  if(!sorted.length){o.innerHTML='<div class="empty"><div class="ei">&#129300;</div>No matches — try different ingredients.</div>';return;}
-  kitAllResults=sorted;kitShown=0;
-  o.innerHTML='<div style="font-size:12px;color:var(--mt);margin-bottom:14px;">'+sorted.length+' recipes found — closest matches first</div>';
-  kitGrid=document.createElement('div');kitGrid.className='grid';
-  o.appendChild(kitGrid);
-  wireGrid(kitGrid);
-  showMoreKit();
-  onNearBottom(o,showMoreKit);
+  if(!selI.size)return;
+  const q=[...selI].join(' ');
+  document.getElementById('hQ').value=q;
+  go('home');
+  doSearch();
 }
 
 function showMoreKit(){
