@@ -6,7 +6,7 @@ const os = require('os');
 const app = express();
 const PORT = 3002;
 const DATA_FILE = path.join(__dirname, 'data.json');
-const MEAL_API = 'https://www.themealdb.com/api/json/v1/1';
+const MEAL_API = 'https://www.themealdb.com/api/json/v2/65232507';
 const SITE = 'https://chompr.kitchen';
 
 app.use(express.json({ limit: '5mb' }));

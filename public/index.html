@@ -646,8 +646,7 @@ body.no-scroll { overflow: hidden; }
 <div class="dto" id="detO"><div class="dp" id="detP"></div></div>
 
 <script>
-const API='https://www.themealdb.com/api/json/v1/1';
-const DRINK_API='https://www.thecocktaildb.com/api/json/v1/1';
+const API='https://www.themealdb.com/api/json/v2/65232507';
 const SK={sv:'sc6_saved',rt:'sc6_ratings'};
 const STAR_L=['','Awful','Meh','Good','Great','Amazing!'];
 const ING=[
@@ -1065,7 +1064,6 @@ const CAT_GROUPS=[
   {label:'Vegetarian',icon:'&#129382;',cats:['Vegetarian']},
   {label:'Vegan',icon:'&#127793;',cats:['Vegan']},
   {label:'Gluten Free',icon:'&#127806;',cats:['_gluten_free']},
-  {label:'Drinks',icon:'&#127865;',cats:['_drinks']},
   {label:'Other',icon:'&#127869;',cats:['Miscellaneous']}
 ];
 
@@ -1079,17 +1077,12 @@ async function loadCats(){
   // Build grouped cards with friendly names and icons
   const catMap={};
   d.categories.forEach(c=>{catMap[c.strCategory]={thumb:c.strCategoryThumb,desc:c.strCategoryDescription};});
-  // Fetch thumbnails for special categories
-  const [gfSearch,dkSearch]=await Promise.all([
-    af(API+'/search.php?s=grilled'),
-    af(DRINK_API+'/search.php?s=margarita')
-  ]);
+  // Fetch thumbnail for gluten free category
+  const gfSearch=await af(API+'/search.php?s=grilled');
   const gfThumb=gfSearch&&gfSearch.meals?gfSearch.meals[0].strMealThumb:'';
-  const dkThumb=dkSearch&&dkSearch.drinks?dkSearch.drinks[0].strDrinkThumb:'';
   g.innerHTML=CAT_GROUPS.map(grp=>{
     let thumb=catMap[grp.cats[0]]?catMap[grp.cats[0]].thumb:'';
     if(grp.cats[0]==='_gluten_free'&&gfThumb)thumb=gfThumb;
-    if(grp.cats[0]==='_drinks'&&dkThumb)thumb=dkThumb;
     if(grp.cats[0]==='Miscellaneous')thumb='https://upload.wikimedia.org/wikipedia/commons/e/e2/Formal_Place_Setting.jpg';
     const imgHtml=thumb?'<img src="'+thumb+'" alt="'+grp.label+'" loading="lazy">':'<div style="height:105px;display:flex;align-items:center;justify-content:center;background:var(--cd);font-size:2.5rem;">'+grp.icon+'</div>';
     return`<div class="cat-card" data-cats="${grp.cats.join(',')}">${imgHtml}<div class="cc-name">${grp.icon} ${grp.label}</div></div>`;
@@ -1099,7 +1092,6 @@ async function loadCats(){
 
 async function browseC(cats,label){
   if(cats.includes('_gluten_free')){browseGF();return;}
-  if(cats.includes('_drinks')){browseDrinks();return;}
   const o=document.getElementById('catR');
   o.innerHTML='<div class="spin">Loading '+esc(label)+'...</div>';
   const all=await Promise.all(cats.map(c=>af(API+'/filter.php?c='+encodeURIComponent(c))));
@@ -1163,74 +1155,7 @@ async function loadMoreGF(target){
   gfLoading=false;
 }
 
-// ============ DRINKS — TheCocktailDB ============
-let dkGrid=null,dkLoading=false,dkIds=new Set();
-
-function parseDrink(d){
-  return{idMeal:d.idDrink,strMeal:d.strDrink,strMealThumb:d.strDrinkThumb,strCategory:d.strCategory||'Drink',strArea:d.strAlcoholic||'',strInstructions:d.strInstructions||'',
-    strSource:d.strSource||('https://www.thecocktaildb.com/drink/'+d.idDrink),strYoutube:d.strVideo||''};
-}
-
-function parseDrinkFull(d){
-  // Copy ingredient fields into strIngredientN format for cardDiff compatibility
-  const m=parseDrink(d);
-  for(let i=1;i<=15;i++){m['strIngredient'+i]=d['strIngredient'+i]||'';m['strMeasure'+i]=d['strMeasure'+i]||'';}
-  for(let i=16;i<=20;i++){m['strIngredient'+i]='';m['strMeasure'+i]='';}
-  return m;
-}
-
-async function browseDrinks(){
-  const o=document.getElementById('catR');
-  o.innerHTML='<div class="spin">Loading drinks...</div>';
-  dkIds.clear();
-  dkGrid=document.createElement('div');dkGrid.className='grid';
-  o.innerHTML='<div style="font-size:12px;color:var(--mt);margin-bottom:14px;">Drinks — cocktails, smoothies, shakes and more</div>';
-  o.appendChild(dkGrid);
-  wireGrid(dkGrid);
-  await loadMoreDrinks(16);
-  onNearBottom(o,()=>loadMoreDrinks(10));
-  o.scrollIntoView({behavior:'smooth'});
-}
-
-async function loadMoreDrinks(target){
-  if(dkLoading)return;dkLoading=true;
-  let found=0,tries=0;
-  while(found<target&&tries<6){
-    tries++;
-    const ps=[];for(let i=0;i<target;i++)ps.push(af(DRINK_API+'/random.php'));
-    const rs=await Promise.all(ps);
-    for(const r of rs){
-      if(!r||!r.drinks)continue;
-      const d=r.drinks[0];
-      if(dkIds.has(d.idDrink))continue;
-      dkIds.add(d.idDrink);
-      const m=parseDrinkFull(d);
-      m._isDrink=true;
-      appendCards(dkGrid,[m]);
-      found++;
-      if(found>=target)break;
-    }
-  }
-  dkLoading=false;
-}
-
-// Detail — handles both meals and drinks
 async function viewA(aid){
-  // Check if this is a drink (stored in _mc with drink fields)
-  const cached=_mc[aid];
-  if(cached&&cached._isDrink){
-    const p=document.getElementById('detP');
-    p.innerHTML='<div class="spin" style="padding:48px;">Loading drink...</div>';
-    document.getElementById('detO').classList.add('act');document.body.classList.add('no-scroll');
-    const d=await af(DRINK_API+'/lookup.php?i='+aid);
-    if(!d||!d.drinks){p.innerHTML='<div class="dcon"><p style="color:var(--mt)">Could not load.</p><button onclick="closeDet()" style="margin-top:12px;padding:10px 20px;border-radius:10px;background:var(--cd);color:var(--tx);border:1px solid var(--bd);cursor:pointer">Close</button></div>';return;}
-    const dk=d.drinks[0];
-    const mf=parseDrinkFull(dk);
-    mf._isDrink=true;
-    renderDet(parseMeal(mf));
-    return;
-  }
-  // Normal meal
   const p=document.getElementById('detP');
   p.innerHTML='<div class="spin" style="padding:48px;">Loading recipe...</div>';
   document.getElementById('detO').classList.add('act');document.body.classList.add('no-scroll');
